@@ -16,11 +16,6 @@ class AuthorizationMiddleware(BaseMiddleware):
             data: Dict[str, Any],
     ) -> Any:
 
-        # admin = await roles.insert_one({'name': 'admin',
-        #                                 'password': 'password_for_admin'})
-        # user = await roles.insert_one({'name': 'user',
-        #                                'password': 'password_for_user'})
-
         user_id = event.from_user.id
         username = event.from_user.username
         name = event.from_user.full_name

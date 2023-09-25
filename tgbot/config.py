@@ -15,6 +15,8 @@ class TgBot:
     token: str
     admin_ids: list[int]
     use_mongo_storage: bool
+    default_admin_password: str
+    default_user_password: str
 
 
 @dataclass
@@ -37,7 +39,11 @@ def load_config(path: str = None) -> Config:
         tg_bot=TgBot(
             token=env.str("BOT_TOKEN"),
             admin_ids=env.list('ADMINS', subcast=int),
-            use_mongo_storage=env.bool("USE_MONGO_STORAGE")
+
+            default_admin_password=env.str('DEFAULT_ADMIN_PASSWORD'),
+            default_user_password=env.str('DEFAULT_USER_PASSWORD'),
+
+            use_mongo_storage=env.bool("USE_MONGO_STORAGE"),
         ),
         db=DbConfig(
             name=env.str('DB_NAME'),

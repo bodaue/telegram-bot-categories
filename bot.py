@@ -6,6 +6,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.utils.callback_answer import CallbackAnswerMiddleware
 
+from tgbot.db.service import create_default_passwords
 from tgbot.handlers.admins.categories_handler import admin_router
 from tgbot.handlers.admins.get_users_handler import admin_users_router
 from tgbot.handlers.admins.settings_handler import admin_settings_router
@@ -43,6 +44,9 @@ def register_logger():
 
 async def main():
     from tgbot.config import config
+
+    await create_default_passwords(admin_password=config.tg_bot.default_admin_password,
+                                   user_password=config.tg_bot.default_user_password)
 
     register_logger()
 
