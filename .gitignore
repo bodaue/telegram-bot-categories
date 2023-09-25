@@ -60,7 +60,6 @@ venv.bak/
 # Pyre type checker
 .pyre/
 .idea/
-.env
 cache/
 
 config-google.json
