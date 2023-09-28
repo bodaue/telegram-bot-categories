@@ -1,10 +1,11 @@
 from datetime import datetime, timezone, timedelta
 
-from aiogram import Router, F, Bot
+from aiogram import Router, F, Bot, html
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 
+from tgbot.db.service import get_instruction
 from tgbot.keyboards.inline.categories_keyboards import AcceptMessageCallbackFactory
 
 user_router = Router()
@@ -14,7 +15,8 @@ user_router.callback_query.filter(F.message.chat.type == 'private')
 
 @user_router.message(CommandStart(), flags={'throttling_key': 'default'})
 async def user_start(message: Message, state: FSMContext):
-    await message.answer('<b>Вы уже авторизованы как пользователь!</b>')
+    instruction = await get_instruction()
+    await message.answer(html.quote(instruction))
     await state.clear()
 
 

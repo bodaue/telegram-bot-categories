@@ -1,7 +1,7 @@
 import asyncio
 import re
 
-from aiogram import Router, F, Bot
+from aiogram import Router, F, html, Bot
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
@@ -9,11 +9,13 @@ from bson import ObjectId
 from pymongo import DESCENDING
 
 from tgbot.db.db_api import categories, user_categories, users
+from tgbot.db.service import get_instruction
 from tgbot.filters.admin import AdminFilter
 from tgbot.handlers.admins.categories_func import get_category_info
 from tgbot.keyboards.default.reply import admin_keyboard
 from tgbot.keyboards.inline.categories_keyboards import paginate_categories, categories_keyboard, \
     current_category_keyboard, CategoryCallbackFactory, accept_keyboard, accept_getting_message
+from tgbot.types import Album
 
 admin_router = Router()
 admin_router.message.filter(AdminFilter(), F.chat.type == "private")
@@ -22,7 +24,8 @@ admin_router.message.filter(AdminFilter(), F.chat.type == "private")
 @admin_router.message(Command(commands='start'))
 async def admin_start(message: Message, state: FSMContext):
     await state.clear()
-    await message.answer(text='Меню',
+    instruction = await get_instruction()
+    await message.answer(html.quote(instruction),
                          reply_markup=admin_keyboard)
 
 
@@ -164,6 +167,7 @@ async def accept_delete_category(call: CallbackQuery, callback_data: CategoryCal
 
     await call.answer('Категория успешно удалена!')
     await get_categories(call)
+    await call.message.delete()
 
 
 # Ветка "Создать новую категорию"
@@ -211,19 +215,28 @@ async def send_message(call: CallbackQuery, callback_data: CategoryCallbackFacto
 
 
 @admin_router.message(StateFilter('waiting_category_message'))
-async def waiting_category_message(message: Message, bot: Bot, state: FSMContext):
-    text = message.text if message.text else message.caption
+async def waiting_category_message(message: Message, bot: Bot, state: FSMContext, album: Album = None):
     data = await state.get_data()
     category_id = data.get('category_id')
 
     cursor = user_categories.find({'category_id': category_id})
     users_in_category = await cursor.to_list(length=None)
+    await message.answer(text='<b>Подтвердите получение</b>',
+                         reply_markup=accept_getting_message(admin_id=message.from_user.id,
+                                                             message_id=message.message_id))
     for user in users_in_category:
+        print(user)
         await asyncio.sleep(0.1)
 
         user_id = user['user_id']
-        await message.copy_to(chat_id=user_id,
-                              reply_markup=accept_getting_message(message.from_user.id,
-                                                                  message.message_id))
-        # await bot.send_message(chat_id=user_id,
-        #                        text=text)
+        if album:
+            await album.copy_to(chat_id=user_id)
+            await bot.send_message(chat_id=user_id,
+                                   text='<b>Подтвердите получение</b>',
+                                   reply_markup=accept_getting_message(admin_id=message.from_user.id,
+                                                                       message_id=message.message_id))
+            continue
+        else:
+            await message.copy_to(chat_id=user_id,
+                                  reply_markup=accept_getting_message(admin_id=message.from_user.id,
+                                                                      message_id=message.message_id))

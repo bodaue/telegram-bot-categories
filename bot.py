@@ -11,6 +11,7 @@ from tgbot.handlers.admins.categories_handler import admin_router
 from tgbot.handlers.admins.get_users_handler import admin_users_router
 from tgbot.handlers.admins.settings_handler import admin_settings_router
 from tgbot.handlers.users.start import user_router
+from tgbot.middlewares.album import AlbumMiddleware
 from tgbot.middlewares.authorization import AuthorizationMiddleware
 from tgbot.middlewares.config import ConfigMiddleware
 from tgbot.middlewares.throttling import ThrottlingMiddleware
@@ -33,6 +34,7 @@ def register_global_middlewares(dp: Dispatcher, config):
     dp.callback_query.outer_middleware(ConfigMiddleware(config))
     dp.message.middleware(ThrottlingMiddleware())
     dp.callback_query.middleware(CallbackAnswerMiddleware())
+    dp.message.middleware(AlbumMiddleware())
 
 
 def register_logger():

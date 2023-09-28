@@ -1,4 +1,4 @@
-from tgbot.db.db_api import roles
+from tgbot.db.db_api import roles, settings
 
 
 async def create_default_passwords(admin_password: str, user_password: str):
@@ -11,3 +11,12 @@ async def create_default_passwords(admin_password: str, user_password: str):
     if not user_role:
         await roles.insert_one({'name': 'user',
                                 'password': user_password})
+
+
+async def get_instruction() -> str:
+    instruction = await settings.find_one({'name': 'instruction'})
+    if not instruction:
+        await settings.insert_one({'name': 'instruction',
+                                   'text': 'Инструкция'})
+    instruction = await settings.find_one({'name': 'instruction'})
+    return instruction.get('text')

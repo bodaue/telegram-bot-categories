@@ -7,7 +7,11 @@ class PasswordCallbackFactory(CallbackData, prefix="password"):
     role: str
 
 
-change_password_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+edit_settings_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+    [
+        InlineKeyboardButton(text='Изменить текст инструкции',
+                             callback_data='change_instruction')
+    ],
     [
         InlineKeyboardButton(text='Изменить админ пароль',
                              callback_data=PasswordCallbackFactory(action='change',

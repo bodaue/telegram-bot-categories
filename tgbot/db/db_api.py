@@ -11,3 +11,5 @@ roles = db['roles']
 categories = db['categories']
 users = db['users']
 user_categories = db['user_categories']
+
+settings = db['settings']
