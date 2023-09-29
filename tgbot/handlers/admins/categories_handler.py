@@ -12,7 +12,6 @@ from pymongo import DESCENDING
 
 from tgbot.db.db_api import categories, user_categories, users, dialogs
 from tgbot.db.service import get_admins
-from tgbot.filters.admin import AdminFilter
 from tgbot.handlers.admins.categories_func import get_category_info
 from tgbot.keyboards.inline.categories_keyboards import paginate_categories, categories_keyboard, \
     current_category_keyboard, CategoryCallbackFactory, accept_keyboard, accept_getting_message
@@ -20,8 +19,6 @@ from tgbot.keyboards.inline.categories_keyboards import type_send_message
 from tgbot.types import Album
 
 admin_categories_router = Router()
-admin_categories_router.message.filter(AdminFilter(), F.chat.type == "private")
-admin_categories_router.callback_query.filter(AdminFilter(), F.message.chat.type == "private")
 
 
 @admin_categories_router.message(F.text == 'Категории')
@@ -202,7 +199,7 @@ async def waiting_category_name(message: Message, state: FSMContext):
 
 
 @admin_categories_router.callback_query(CategoryCallbackFactory.filter(F.action == 'send_message'))
-async def choose_type_send_message(call: CallbackQuery, callback_data: CategoryCallbackFactory, state: FSMContext):
+async def choose_type_send_message(call: CallbackQuery, callback_data: CategoryCallbackFactory):
     await call.message.answer('<b>Выберите один из вариантов:</b>\n'
                               'Если выбрать "С оповещением", тогда админы получат оповещение о том, что Вы отправили'
                               ' сообщение в эту категорию\n',

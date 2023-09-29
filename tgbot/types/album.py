@@ -53,13 +53,13 @@ class Album(TelegramObject):
         return group
 
     def copy_to(
-        self,
-        chat_id: Union[int, str],
-        message_thread_id: Optional[int] = None,
-        disable_notification: Optional[bool] = None,
-        protect_content: Optional[bool] = UNSET_PROTECT_CONTENT,
-        reply_to_message_id: Optional[int] = None,
-        allow_sending_without_reply: Optional[bool] = None,
+            self,
+            chat_id: Union[int, str],
+            message_thread_id: Optional[int] = None,
+            disable_notification: Optional[bool] = None,
+            protect_content: Optional[bool] = UNSET_PROTECT_CONTENT,
+            reply_to_message_id: Optional[int] = None,
+            allow_sending_without_reply: Optional[bool] = None,
     ) -> SendMediaGroup:
         return SendMediaGroup(
             chat_id=chat_id,

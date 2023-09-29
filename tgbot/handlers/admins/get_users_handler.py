@@ -5,15 +5,12 @@ from aiogram.types import Message, CallbackQuery
 from pymongo import ASCENDING
 
 from tgbot.db.db_api import users, user_categories
-from tgbot.filters.admin import AdminFilter
 from tgbot.handlers.admins.get_users_func import get_user_info
 from tgbot.keyboards.inline.users_keyboards import paginate_users, UserCallbackFactory, current_user_keyboard, \
     accept_keyboard
 from tgbot.types import Album
 
 admin_users_router = Router()
-admin_users_router.message.filter(AdminFilter(), F.chat.type == "private")
-admin_users_router.callback_query.filter(AdminFilter(), F.message.chat.type == "private")
 
 
 @admin_users_router.message(F.text == 'Пользователи')

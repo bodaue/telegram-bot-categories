@@ -7,9 +7,6 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.utils.callback_answer import CallbackAnswerMiddleware
 
 from tgbot.db.service import create_default_passwords
-from tgbot.handlers.admins.categories_handler import admin_categories_router
-from tgbot.handlers.admins.get_users_handler import admin_users_router
-from tgbot.handlers.admins.settings_handler import admin_settings_router
 from tgbot.handlers.admins.start import admin_router
 from tgbot.handlers.users.start import user_router
 from tgbot.middlewares.album import AlbumMiddleware
@@ -68,9 +65,6 @@ async def main():
 
     for router in [
         admin_router,
-        admin_users_router,
-        admin_settings_router,
-        admin_categories_router,
         user_router,
     ]:
         dp.include_router(router)

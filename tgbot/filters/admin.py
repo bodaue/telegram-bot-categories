@@ -13,4 +13,5 @@ class AdminFilter(BaseFilter):
             return False
         user = await users.find_one({'role': admin_role['_id'],
                                      '_id': user_id})
+        print(user)
         return user

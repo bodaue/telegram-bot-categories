@@ -111,7 +111,6 @@ def current_user_keyboard(user_id: int,
     return keyboard
 
 
-
 def accept_keyboard(user_id: int,
                     page: int):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[

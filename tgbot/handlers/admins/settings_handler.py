@@ -5,12 +5,9 @@ from aiogram.types import Message, CallbackQuery
 
 from tgbot.db.db_api import roles, settings
 from tgbot.db.service import get_instruction
-from tgbot.filters.admin import AdminFilter
 from tgbot.keyboards.inline.settings_keyboards import edit_settings_keyboard, PasswordCallbackFactory
 
 admin_settings_router = Router()
-admin_settings_router.message.filter(AdminFilter(), F.chat.type == "private")
-admin_settings_router.callback_query.filter(AdminFilter(), F.message.chat.type == "private")
 
 MINIMUM_INSTRUCTION_LENGTH = 4
 MAXIMUM_INSTRUCTION_LENGTH = 4000
