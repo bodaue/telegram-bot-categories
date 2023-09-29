@@ -13,3 +13,5 @@ users = db['users']
 user_categories = db['user_categories']
 
 settings = db['settings']
+
+dialogs = db['dialogs']

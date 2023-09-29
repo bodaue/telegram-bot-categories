@@ -10,6 +10,7 @@ from tgbot.keyboards.inline.settings_keyboards import edit_settings_keyboard, Pa
 
 admin_settings_router = Router()
 admin_settings_router.message.filter(AdminFilter(), F.chat.type == "private")
+admin_settings_router.callback_query.filter(AdminFilter(), F.message.chat.type == "private")
 
 MINIMUM_INSTRUCTION_LENGTH = 4
 MAXIMUM_INSTRUCTION_LENGTH = 4000

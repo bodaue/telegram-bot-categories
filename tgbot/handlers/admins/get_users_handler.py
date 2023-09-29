@@ -9,9 +9,11 @@ from tgbot.filters.admin import AdminFilter
 from tgbot.handlers.admins.get_users_func import get_user_info
 from tgbot.keyboards.inline.users_keyboards import paginate_users, UserCallbackFactory, current_user_keyboard, \
     accept_keyboard
+from tgbot.types import Album
 
 admin_users_router = Router()
 admin_users_router.message.filter(AdminFilter(), F.chat.type == "private")
+admin_users_router.callback_query.filter(AdminFilter(), F.message.chat.type == "private")
 
 
 @admin_users_router.message(F.text == 'Пользователи')
@@ -74,7 +76,11 @@ async def change_description(call: CallbackQuery, callback_data: UserCallbackFac
     await state.set_state('waiting_description')
     await state.update_data(user_id=user_id,
                             page=page)
-    await call.message.edit_text('Отправьте описание пользователя')
+
+    user = await users.find_one({'_id': user_id})
+    text = 'Отправьте описание пользователя.' if not user.get('description') else 'Отправьте описание пользователя.\n' \
+                                                                                  'Чтобы удалить описание, отправьте 0'
+    await call.message.edit_text(text)
 
 
 @admin_users_router.message(StateFilter('waiting_description'), F.text)
@@ -92,8 +98,12 @@ async def waiting_description(message: Message, state: FSMContext):
     user_id = data.get('user_id')
     page = data.get('page')
 
-    await users.update_one(filter={'_id': user_id},
-                           update={'$set': {'description': description}})
+    if description == '0':
+        await users.update_one(filter={'_id': user_id},
+                               update={'$set': {'description': None}})
+    else:
+        await users.update_one(filter={'_id': user_id},
+                               update={'$set': {'description': description}})
 
     user = await users.find_one({'_id': user_id})
     text = await get_user_info(user=user)
@@ -101,3 +111,25 @@ async def waiting_description(message: Message, state: FSMContext):
                          reply_markup=current_user_keyboard(user_id=user_id,
                                                             page=page))
     await state.clear()
+
+
+@admin_users_router.callback_query(UserCallbackFactory.filter(F.action == 'send_message'))
+async def send_message(call: CallbackQuery, callback_data: UserCallbackFactory, state: FSMContext):
+    user_id = callback_data.user_id
+    page = callback_data.page
+    await state.set_state('waiting_user_message')
+    await state.update_data(user_id=user_id,
+                            page=page)
+    await call.answer('Отправьте текст сообщения, которое должен получить пользователь')
+
+
+@admin_users_router.message(StateFilter('waiting_user_message'))
+async def waiting_user_message(message: Message, state: FSMContext, album: Album = None):
+    data = await state.get_data()
+    user_id = data.get('user_id')
+
+    await state.clear()
+    if album:
+        await album.copy_to(user_id)
+    else:
+        await message.copy_to(user_id)

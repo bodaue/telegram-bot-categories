@@ -7,14 +7,16 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.utils.callback_answer import CallbackAnswerMiddleware
 
 from tgbot.db.service import create_default_passwords
-from tgbot.handlers.admins.categories_handler import admin_router
+from tgbot.handlers.admins.categories_handler import admin_categories_router
 from tgbot.handlers.admins.get_users_handler import admin_users_router
 from tgbot.handlers.admins.settings_handler import admin_settings_router
+from tgbot.handlers.admins.start import admin_router
 from tgbot.handlers.users.start import user_router
 from tgbot.middlewares.album import AlbumMiddleware
 from tgbot.middlewares.authorization import AuthorizationMiddleware
 from tgbot.middlewares.config import ConfigMiddleware
 from tgbot.middlewares.throttling import ThrottlingMiddleware
+from tgbot.middlewares.update_user_data import UpdateUserDataMiddleware
 from tgbot.misc.mongostorage import MongoStorage
 from tgbot.misc.set_bot_commands import set_default_commands
 from tgbot.services import broadcaster
@@ -32,6 +34,8 @@ def register_global_middlewares(dp: Dispatcher, config):
     dp.message.outer_middleware(AuthorizationMiddleware())
     dp.message.outer_middleware(ConfigMiddleware(config))
     dp.callback_query.outer_middleware(ConfigMiddleware(config))
+    dp.message.outer_middleware(UpdateUserDataMiddleware())
+
     dp.message.middleware(ThrottlingMiddleware())
     dp.callback_query.middleware(CallbackAnswerMiddleware())
     dp.message.middleware(AlbumMiddleware())
@@ -63,9 +67,10 @@ async def main():
     dp = Dispatcher(storage=storage)
 
     for router in [
+        admin_router,
         admin_users_router,
         admin_settings_router,
-        admin_router,
+        admin_categories_router,
         user_router,
     ]:
         dp.include_router(router)

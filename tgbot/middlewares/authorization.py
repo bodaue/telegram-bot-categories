@@ -23,6 +23,7 @@ class AuthorizationMiddleware(BaseMiddleware):
         date = event.date
 
         user = await users.find_one({'_id': user_id})
+
         if user:
             return await handler(event, data)
 

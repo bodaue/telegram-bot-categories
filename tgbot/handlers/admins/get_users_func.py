@@ -4,7 +4,8 @@ from aiogram import html
 async def get_user_info(user: dict):
     user_id = user['_id']
     name = user['name']
-    description = html.italic(user.get('description', ''))
+    description = user.get('description', '')
+    description = html.italic(description) if description else ''
     username = user.get('username', '')
     username = f'@{username}' if username else '-'
 

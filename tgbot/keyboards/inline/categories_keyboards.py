@@ -101,6 +101,23 @@ def current_category_keyboard(category_id: ObjectId,
     return keyboard
 
 
+def type_send_message(category_id: str,
+                      page: int):
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text='С оповещением',
+                                 callback_data=CategoryCallbackFactory(action='send_message_with_notify',
+                                                                       category_id=category_id,
+                                                                       page=page).pack()),
+            InlineKeyboardButton(text='Без оповещения',
+                                 callback_data=CategoryCallbackFactory(action='send_message_without_notify',
+                                                                       category_id=category_id,
+                                                                       page=page).pack())
+        ]
+    ])
+    return keyboard
+
+
 def accept_keyboard(category_id: ObjectId,
                     page: int):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[

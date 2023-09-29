@@ -5,6 +5,7 @@ from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 
+from tgbot.db.db_api import dialogs
 from tgbot.db.service import get_instruction
 from tgbot.keyboards.inline.categories_keyboards import AcceptMessageCallbackFactory
 
@@ -34,3 +35,21 @@ async def accept_getting_message(call: CallbackQuery, callback_data: AcceptMessa
                            text=f'<b>{mention}</b> прочитал сообщение.\n'
                                 f'<b>Дата:</b> {date}')
     await call.message.delete_reply_markup()
+
+
+@user_router.message(F.reply_to_message)
+async def reply_to_message(message: Message):
+    user_id = message.from_user.id
+    dialog = await dialogs.find_one({'user_id': user_id,
+                                     'user_message_id': message.reply_to_message.message_id})
+
+    if dialog:
+        admin_id = dialog['admin_id']
+        admin_message_id = dialog['admin_message_id']
+
+        m = await message.copy_to(chat_id=admin_id,
+                                  reply_to_message_id=admin_message_id)
+        await dialogs.update_one(filter={'user_id': user_id,
+                                         'user_message_id': message.reply_to_message.message_id,
+                                         'admin_id': dialog['admin_id']},
+                                 update={'$set': {'admin_message_id': m.message_id}})

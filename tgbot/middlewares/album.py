@@ -10,7 +10,7 @@ from cachetools import TTLCache
 from ..types import Album, Media
 
 DEFAULT_LATENCY = 0.2
-DEFAULT_TTL = 0.3
+DEFAULT_TTL = 0.5
 
 
 class AlbumMiddleware(BaseMiddleware):

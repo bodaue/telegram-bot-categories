@@ -86,12 +86,12 @@ async def paginate_users(users_list: list[dict],
 def current_user_keyboard(user_id: int,
                           page: int) -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        # [
-        #     InlineKeyboardButton(text='Отправить сообщение',
-        #                          callback_data=UserCallbackFactory(action='send_message',
-        #                                                            user_id=user_id,
-        #                                                            page=page).pack())
-        # ],
+        [
+            InlineKeyboardButton(text='Отправить сообщение',
+                                 callback_data=UserCallbackFactory(action='send_message',
+                                                                   user_id=user_id,
+                                                                   page=page).pack())
+        ],
         [
             InlineKeyboardButton(text='Сменить описание',
                                  callback_data=UserCallbackFactory(action='change_description',
@@ -109,6 +109,7 @@ def current_user_keyboard(user_id: int,
         ]
     ])
     return keyboard
+
 
 
 def accept_keyboard(user_id: int,

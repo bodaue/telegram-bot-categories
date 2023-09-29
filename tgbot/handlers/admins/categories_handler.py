@@ -1,42 +1,37 @@
 import asyncio
 import re
+from contextlib import suppress
 
-from aiogram import Router, F, html, Bot
-from aiogram.filters import Command, StateFilter
+from aiogram import Router, F, Bot
+from aiogram.exceptions import TelegramAPIError
+from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 from bson import ObjectId
 from pymongo import DESCENDING
 
-from tgbot.db.db_api import categories, user_categories, users
-from tgbot.db.service import get_instruction
+from tgbot.db.db_api import categories, user_categories, users, dialogs
+from tgbot.db.service import get_admins
 from tgbot.filters.admin import AdminFilter
 from tgbot.handlers.admins.categories_func import get_category_info
-from tgbot.keyboards.default.reply import admin_keyboard
 from tgbot.keyboards.inline.categories_keyboards import paginate_categories, categories_keyboard, \
     current_category_keyboard, CategoryCallbackFactory, accept_keyboard, accept_getting_message
+from tgbot.keyboards.inline.categories_keyboards import type_send_message
 from tgbot.types import Album
 
-admin_router = Router()
-admin_router.message.filter(AdminFilter(), F.chat.type == "private")
+admin_categories_router = Router()
+admin_categories_router.message.filter(AdminFilter(), F.chat.type == "private")
+admin_categories_router.callback_query.filter(AdminFilter(), F.message.chat.type == "private")
 
 
-@admin_router.message(Command(commands='start'))
-async def admin_start(message: Message, state: FSMContext):
-    await state.clear()
-    instruction = await get_instruction()
-    await message.answer(html.quote(instruction),
-                         reply_markup=admin_keyboard)
-
-
-@admin_router.message(F.text == 'Категории')
+@admin_categories_router.message(F.text == 'Категории')
 async def get_categories_menu(message: Message):
     await message.answer('Выберите действие',
                          reply_markup=categories_keyboard)
 
 
 # Ветка "Список категорий"
-@admin_router.callback_query(F.data == 'get_categories')
+@admin_categories_router.callback_query(F.data == 'get_categories')
 async def get_categories(call: CallbackQuery):
     cursor = categories.find().sort('date', DESCENDING)
     categories_list = await cursor.to_list(length=None)
@@ -50,7 +45,7 @@ async def get_categories(call: CallbackQuery):
                                  reply_markup=keyboard)
 
 
-@admin_router.callback_query(F.data.contains('categories_page:'))
+@admin_categories_router.callback_query(F.data.contains('categories_page:'))
 async def change_category_page(call: CallbackQuery):
     data = call.data.split(':')
     page = int(data[1])
@@ -63,7 +58,7 @@ async def change_category_page(call: CallbackQuery):
                                  reply_markup=keyboard)
 
 
-@admin_router.callback_query(CategoryCallbackFactory.filter(F.action == 'choose'))
+@admin_categories_router.callback_query(CategoryCallbackFactory.filter(F.action == 'choose'))
 async def get_category(call: CallbackQuery, callback_data: CategoryCallbackFactory):
     _id = ObjectId(callback_data.category_id)
     page = callback_data.page
@@ -75,7 +70,7 @@ async def get_category(call: CallbackQuery, callback_data: CategoryCallbackFacto
                                                                         page=page))
 
 
-@admin_router.callback_query(CategoryCallbackFactory.filter(F.action == 'add_user'))
+@admin_categories_router.callback_query(CategoryCallbackFactory.filter(F.action == 'add_user'))
 async def add_user_in_category(call: CallbackQuery, callback_data: CategoryCallbackFactory, state: FSMContext):
     _id = ObjectId(callback_data.category_id)
     page = callback_data.page
@@ -86,7 +81,7 @@ async def add_user_in_category(call: CallbackQuery, callback_data: CategoryCallb
                             page=page)
 
 
-@admin_router.message(StateFilter('waiting_user_id'), F.text)
+@admin_categories_router.message(StateFilter('waiting_user_id'), F.text)
 async def waiting_user_id(message: Message, state: FSMContext):
     data = await state.get_data()
     category_id = data.get('category_id')
@@ -118,7 +113,7 @@ async def waiting_user_id(message: Message, state: FSMContext):
     await state.clear()
 
 
-@admin_router.callback_query(CategoryCallbackFactory.filter(F.action == 'rename'))
+@admin_categories_router.callback_query(CategoryCallbackFactory.filter(F.action == 'rename'))
 async def rename_category(call: CallbackQuery, callback_data: CategoryCallbackFactory, state: FSMContext):
     _id = ObjectId(callback_data.category_id)
     page = callback_data.page
@@ -129,7 +124,7 @@ async def rename_category(call: CallbackQuery, callback_data: CategoryCallbackFa
                             page=page)
 
 
-@admin_router.message(StateFilter('waiting_new_category_name'), F.text)
+@admin_categories_router.message(StateFilter('waiting_new_category_name'), F.text)
 async def waiting_new_category_name(message: Message, state: FSMContext):
     name = message.text.strip()
     if len(name) > 64:
@@ -149,7 +144,7 @@ async def waiting_new_category_name(message: Message, state: FSMContext):
     await message.answer(f'Название изменено на <b>{name}</b>')
 
 
-@admin_router.callback_query(CategoryCallbackFactory.filter(F.action == 'delete'))
+@admin_categories_router.callback_query(CategoryCallbackFactory.filter(F.action == 'delete'))
 async def delete_category(call: CallbackQuery, callback_data: CategoryCallbackFactory):
     _id = ObjectId(callback_data.category_id)
     page = callback_data.page
@@ -158,7 +153,7 @@ async def delete_category(call: CallbackQuery, callback_data: CategoryCallbackFa
                                                               page=page))
 
 
-@admin_router.callback_query(CategoryCallbackFactory.filter(F.action == 'accept_delete'))
+@admin_categories_router.callback_query(CategoryCallbackFactory.filter(F.action == 'accept_delete'))
 async def accept_delete_category(call: CallbackQuery, callback_data: CategoryCallbackFactory):
     _id = ObjectId(callback_data.category_id)
 
@@ -171,13 +166,13 @@ async def accept_delete_category(call: CallbackQuery, callback_data: CategoryCal
 
 
 # Ветка "Создать новую категорию"
-@admin_router.callback_query(F.data == 'create_category')
+@admin_categories_router.callback_query(F.data == 'create_category')
 async def create_category(call: CallbackQuery, state: FSMContext):
     await call.message.answer('Отправьте название категории')
     await state.set_state('waiting_category_name')
 
 
-@admin_router.message(StateFilter('waiting_category_name'), F.text)
+@admin_categories_router.message(StateFilter('waiting_category_name'), F.text)
 async def waiting_category_name(message: Message, state: FSMContext):
     user_id = message.from_user.id
     date = message.date
@@ -206,37 +201,88 @@ async def waiting_category_name(message: Message, state: FSMContext):
     await state.clear()
 
 
-@admin_router.callback_query(CategoryCallbackFactory.filter(F.action == 'send_message'))
+@admin_categories_router.callback_query(CategoryCallbackFactory.filter(F.action == 'send_message'))
+async def choose_type_send_message(call: CallbackQuery, callback_data: CategoryCallbackFactory, state: FSMContext):
+    await call.message.answer('<b>Выберите один из вариантов:</b>\n'
+                              'Если выбрать "С оповещением", тогда админы получат оповещение о том, что Вы отправили'
+                              ' сообщение в эту категорию\n',
+                              reply_markup=type_send_message(category_id=callback_data.category_id,
+                                                             page=callback_data.page))
+
+
+@admin_categories_router.callback_query(CategoryCallbackFactory.filter(F.action.in_(('send_message_with_notify',
+                                                                                     'send_message_without_notify'))))
 async def send_message(call: CallbackQuery, callback_data: CategoryCallbackFactory, state: FSMContext):
     _id = ObjectId(callback_data.category_id)
     await state.set_state('waiting_category_message')
-    await state.update_data(category_id=_id)
-    await call.answer('Отправьте сообщение')
+    if callback_data.action == 'send_message_with_notify':
+        notify = True
+    else:
+        notify = False
+    await state.update_data(category_id=_id,
+                            notify=notify)
+    await call.message.edit_text('Отправьте сообщение')
 
 
-@admin_router.message(StateFilter('waiting_category_message'))
+@admin_categories_router.message(StateFilter('waiting_category_message'))
 async def waiting_category_message(message: Message, bot: Bot, state: FSMContext, album: Album = None):
     data = await state.get_data()
     category_id = data.get('category_id')
+    notify = data.get('notify')
+
+    category = await categories.find_one({'_id': category_id})
+    category_name = category['name']
 
     cursor = user_categories.find({'category_id': category_id})
     users_in_category = await cursor.to_list(length=None)
-    await message.answer(text='<b>Подтвердите получение</b>',
-                         reply_markup=accept_getting_message(admin_id=message.from_user.id,
-                                                             message_id=message.message_id))
-    for user in users_in_category:
-        print(user)
-        await asyncio.sleep(0.1)
 
+    await state.clear()
+
+    if notify:
+        admins = await get_admins()
+        for admin in admins:
+            with suppress(TelegramAPIError):
+                await bot.send_message(chat_id=admin['_id'],
+                                       text=f'<b>Администратор {message.from_user.mention_html()} отправил следующее '
+                                            f'сообщение в категорию "{category_name}</b>"')
+                if album:
+                    await album.copy_to(admin['_id'])
+                else:
+                    await message.copy_to(admin['_id'])
+    for user in users_in_category:
+        await asyncio.sleep(0.1)
         user_id = user['user_id']
-        if album:
-            await album.copy_to(chat_id=user_id)
-            await bot.send_message(chat_id=user_id,
-                                   text='<b>Подтвердите получение</b>',
-                                   reply_markup=accept_getting_message(admin_id=message.from_user.id,
-                                                                       message_id=message.message_id))
-            continue
-        else:
-            await message.copy_to(chat_id=user_id,
-                                  reply_markup=accept_getting_message(admin_id=message.from_user.id,
-                                                                      message_id=message.message_id))
+        with suppress(TelegramAPIError):
+            if album:
+                await album.copy_to(chat_id=user_id)
+                m = await bot.send_message(chat_id=user_id,
+                                           text='<b>Подтвердите получение</b>',
+                                           reply_markup=accept_getting_message(admin_id=message.from_user.id,
+                                                                               message_id=message.message_id))
+
+            else:
+                m = await message.copy_to(chat_id=user_id,
+                                          reply_markup=accept_getting_message(admin_id=message.from_user.id,
+                                                                              message_id=message.message_id))
+            await dialogs.insert_one({'admin_id': message.from_user.id,
+                                      'admin_message_id': message.message_id,
+                                      'user_id': user_id,
+                                      'user_message_id': m.message_id})
+
+
+@admin_categories_router.message(F.reply_to_message)
+async def reply_to_message(message: Message):
+    admin_id = message.from_user.id
+    dialog = await dialogs.find_one({'admin_id': admin_id,
+                                     'admin_message_id': message.reply_to_message.message_id})
+
+    if dialog:
+        user_id = dialog['user_id']
+        user_message_id = dialog['user_message_id']
+
+        await message.copy_to(chat_id=user_id,
+                              reply_to_message_id=user_message_id)
+        await dialogs.update_one(filter={'admin_id': admin_id,
+                                         'admin_message_id': message.reply_to_message.message_id,
+                                         'user_id': dialog['user_id']},
+                                 update={'$set': {'admin_message_id': message.message_id}})
