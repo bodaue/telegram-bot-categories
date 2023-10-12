@@ -27,6 +27,40 @@ async def get_categories_menu(message: Message):
                          reply_markup=categories_keyboard)
 
 
+# Ветка "Отправить сообщение всем категориям"
+@admin_categories_router.callback_query(F.data == 'send_message_all_categories')
+async def send_message_all_categories(call: CallbackQuery, state: FSMContext):
+    await call.answer('Отправьте сообщение')
+    await state.set_state('waiting_message_all_categories')
+
+
+@admin_categories_router.message(StateFilter('waiting_message_all_categories'))
+async def waiting_message_all_categories(message: Message, state: FSMContext, bot: Bot, album: Album = None):
+    await state.clear()
+    cursor = user_categories.find()
+    users_list = await cursor.to_list(length=None)
+    users_list = [user['user_id'] for user in users_list]
+    users_list = set(users_list)
+    print(users_list)
+    for user in users_list:
+        with suppress(TelegramAPIError):
+            if album:
+                await album.copy_to(chat_id=user)
+                m = await bot.send_message(chat_id=user,
+                                           text='<b>Подтвердите получение</b>',
+                                           reply_markup=accept_getting_message(admin_id=message.from_user.id,
+                                                                               message_id=message.message_id))
+
+            else:
+                m = await message.copy_to(chat_id=user,
+                                          reply_markup=accept_getting_message(admin_id=message.from_user.id,
+                                                                              message_id=message.message_id))
+            await dialogs.insert_one({'admin_id': message.from_user.id,
+                                      'admin_message_id': message.message_id,
+                                      'user_id': user,
+                                      'user_message_id': m.message_id})
+
+
 # Ветка "Список категорий"
 @admin_categories_router.callback_query(F.data == 'get_categories')
 async def get_categories(call: CallbackQuery):
@@ -265,6 +299,7 @@ async def waiting_category_message(message: Message, bot: Bot, state: FSMContext
                                       'admin_message_id': message.message_id,
                                       'user_id': user_id,
                                       'user_message_id': m.message_id})
+        await message.reply('Сообщение было отправлено')
 
 
 @admin_categories_router.message(F.reply_to_message)

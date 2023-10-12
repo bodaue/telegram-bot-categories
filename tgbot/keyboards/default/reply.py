@@ -10,3 +10,10 @@ admin_keyboard = ReplyKeyboardMarkup(keyboard=[
     ]
 ],
     resize_keyboard=True)
+
+user_keyboard = ReplyKeyboardMarkup(keyboard=[
+    [
+        KeyboardButton(text='Отправить контент')
+    ]
+],
+    resize_keyboard=True)

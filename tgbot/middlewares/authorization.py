@@ -5,7 +5,8 @@ from aiogram.types import Message
 
 from tgbot.db.db_api import users, roles
 from tgbot.db.service import get_instruction
-from tgbot.keyboards.default.reply import admin_keyboard
+from tgbot.keyboards.default.reply import admin_keyboard, user_keyboard
+from tgbot.services.broadcaster import broadcast_admins
 
 
 class AuthorizationMiddleware(BaseMiddleware):
@@ -32,17 +33,24 @@ class AuthorizationMiddleware(BaseMiddleware):
         text = event.text if event.text else event.caption
         role = await roles.find_one({'password': text})
         if role:
+            instruction = await get_instruction()
+
+            if role['name'] == 'admin':
+                verbose_role = 'админ'
+                await event.answer(text=f'<b>Вы успешно авторизовались как {verbose_role}.</b>\n'
+                                        f'{html.quote(instruction)}',
+                                   reply_markup=admin_keyboard)
+            else:
+                verbose_role = 'пользователь'
+                await event.answer(text=f'<b>Вы успешно авторизовались как {verbose_role}.</b>\n'
+                                        f'{html.quote(instruction)}',
+                                   reply_markup=user_keyboard)
+
+            await broadcast_admins(bot=event.bot,
+                                   text=f'Добавился новый {html.bold(verbose_role)}: {event.from_user.mention_html()}')
+
             await users.insert_one({'_id': user_id,
                                     'username': username,
                                     'name': name,
                                     'date': date,
                                     'role': role['_id']})
-            instruction = await get_instruction()
-            if role['name'] == 'admin':
-                await event.answer(
-                    '<b>Вы успешно авторизовались как админ.</b>\n'
-                    f'{html.quote(instruction)}',
-                    reply_markup=admin_keyboard)
-            else:
-                await event.answer(f'<b>Вы успешно авторизовались как пользователь.</b>\n'
-                                   f'{html.quote(instruction)}')

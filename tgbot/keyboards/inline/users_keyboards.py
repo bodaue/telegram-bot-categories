@@ -26,6 +26,9 @@ async def paginate_users(users_list: list[dict],
     user_role = await roles.find_one({'name': 'user'})
 
     keyboard = InlineKeyboardBuilder()
+    if page == 1:
+        keyboard.row(InlineKeyboardButton(text='Отправить сообщение админам',
+                                          callback_data='send_message_admins'))
     admins_builder = InlineKeyboardBuilder()
     users_builder = InlineKeyboardBuilder()
 

@@ -1,10 +1,14 @@
+from contextlib import suppress
+
 from aiogram import F, Router, html
+from aiogram.exceptions import TelegramAPIError
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 from pymongo import ASCENDING
 
 from tgbot.db.db_api import users, user_categories
+from tgbot.db.service import get_admins
 from tgbot.handlers.admins.get_users_func import get_user_info
 from tgbot.keyboards.inline.users_keyboards import paginate_users, UserCallbackFactory, current_user_keyboard, \
     accept_keyboard
@@ -130,3 +134,22 @@ async def waiting_user_message(message: Message, state: FSMContext, album: Album
         await album.copy_to(user_id)
     else:
         await message.copy_to(user_id)
+
+
+@admin_users_router.callback_query(F.data == 'send_message_admins')
+async def send_message_admins(call: CallbackQuery, state: FSMContext):
+    await state.set_state('waiting_admins_message')
+    await call.answer('Отправьте текст сообщения, которое должны получить админы')
+
+
+@admin_users_router.message(StateFilter('waiting_admins_message'))
+async def waiting_admins_message(message: Message, state: FSMContext, album: Album = None):
+    await state.clear()
+    admins = await get_admins()
+    for admin in admins:
+        with suppress(TelegramAPIError):
+            if album:
+                await album.copy_to(admin['_id'])
+            else:
+                await message.copy_to(admin['_id'])
+    await message.reply('Сообщение было отправлено')

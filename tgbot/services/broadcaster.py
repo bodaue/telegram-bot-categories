@@ -4,6 +4,8 @@ import logging
 from aiogram import Bot
 from aiogram import exceptions
 
+from tgbot.db.service import get_admins
+
 
 async def send_message(bot: Bot, user_id, text: str, disable_notification: bool = False) -> bool:
     try:
@@ -22,7 +24,7 @@ async def send_message(bot: Bot, user_id, text: str, disable_notification: bool 
     return False
 
 
-async def broadcast(bot, users, text) -> int:
+async def broadcast(bot: Bot, users, text: str) -> int:
     """
     Simple broadcaster
     :return: Count of messages
@@ -37,3 +39,9 @@ async def broadcast(bot, users, text) -> int:
         logging.info(f"{count} messages successful sent.")
 
     return count
+
+
+async def broadcast_admins(bot: Bot, text: str) -> int:
+    admins = await get_admins()
+    admins = [admin['_id'] for admin in admins]
+    return await broadcast(bot, admins, text)

@@ -3,6 +3,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
+from tgbot.db.db_api import users
 from tgbot.db.service import get_instruction
 from tgbot.filters.admin import AdminFilter
 from tgbot.handlers.admins.categories_handler import admin_categories_router
@@ -16,11 +17,14 @@ admin_router.callback_query.filter(AdminFilter(), F.message.chat.type == "privat
 
 admin_router.include_routers(admin_users_router,
                              admin_settings_router,
-                             admin_categories_router,)
+                             admin_categories_router)
 
 
 @admin_router.message(Command(commands='start'))
 async def admin_start(message: Message, state: FSMContext):
+    users_list = users.find()
+    async for u in users_list:
+        print(u)
     await state.clear()
     instruction = await get_instruction()
     await message.answer(html.quote(instruction),

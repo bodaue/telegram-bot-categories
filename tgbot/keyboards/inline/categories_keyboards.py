@@ -10,11 +10,13 @@ from tgbot.handlers.admins.categories_func import get_category_info
 categories_keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [
         InlineKeyboardButton(text='Создать новую категорию',
-                             callback_data='create_category')
-    ],
-    [
+                             callback_data='create_category'),
         InlineKeyboardButton(text='Список категорий',
                              callback_data='get_categories')
+    ],
+    [
+        InlineKeyboardButton(text='Отправить сообщение всем категориям',
+                             callback_data='send_message_all_categories')
     ]
 ])
 
