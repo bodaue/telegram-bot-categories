@@ -5,7 +5,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from bson import ObjectId
 
-from tgbot.handlers.admins.categories_func import get_category_info
+from tgbot.handlers.admins.categories_handlers.categories_func import get_category_info
 
 categories_keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [
@@ -83,6 +83,12 @@ def current_category_keyboard(category_id: ObjectId,
         [
             InlineKeyboardButton(text='Отправить сообщение',
                                  callback_data=CategoryCallbackFactory(action='send_message',
+                                                                       category_id=str(category_id),
+                                                                       page=page).pack())
+        ],
+        [
+            InlineKeyboardButton(text='Задать область',
+                                 callback_data=CategoryCallbackFactory(action='set_area',
                                                                        category_id=str(category_id),
                                                                        page=page).pack())
         ],

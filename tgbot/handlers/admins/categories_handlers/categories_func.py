@@ -1,4 +1,7 @@
-from tgbot.db.db_api import user_categories, users
+from pymongo import DESCENDING
+
+from tgbot.db.db_api import user_categories, users, categories
+from tgbot.services.point import Point
 
 
 async def get_category_info(category: dict, current: bool = False):
@@ -29,3 +32,14 @@ async def get_category_info(category: dict, current: bool = False):
             text = text + users_text
 
     return text
+
+
+async def get_valid_categories(cords: Point):
+    cursor = categories.find({"cords": {"$ne": None}}).sort('date', DESCENDING)
+    valid_categories = []
+    categories_list = await cursor.to_list(length=None)
+    for category in categories_list:
+        category_cords = category['cords']
+        if cords.in_polygon(category_cords):
+            valid_categories.append(category)
+    return valid_categories

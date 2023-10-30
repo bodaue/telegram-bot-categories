@@ -6,7 +6,7 @@ from aiogram.types import Message
 from tgbot.db.db_api import users
 from tgbot.db.service import get_instruction
 from tgbot.filters.admin import AdminFilter
-from tgbot.handlers.admins.categories_handler import admin_categories_router
+from tgbot.handlers.admins.categories_handlers.categories_handler import categories_router
 from tgbot.handlers.admins.get_users_handler import admin_users_router
 from tgbot.handlers.admins.settings_handler import admin_settings_router
 from tgbot.keyboards.default.reply import admin_keyboard
@@ -17,7 +17,7 @@ admin_router.callback_query.filter(AdminFilter(), F.message.chat.type == "privat
 
 admin_router.include_routers(admin_users_router,
                              admin_settings_router,
-                             admin_categories_router)
+                             categories_router)
 
 
 @admin_router.message(Command(commands='start'))

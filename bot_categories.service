@@ -1,0 +1,13 @@
+[Unit]
+Description=Bot Categories
+After=multi-user.target
+
+[Service]
+User=root
+Group=admin
+Type=simple
+Restart=always
+ExecStart=/root/bot_categories/venv/bin/python3 /root/bot_categories/bot.py
+
+[Install]
+WantedBy=multi-user.target
